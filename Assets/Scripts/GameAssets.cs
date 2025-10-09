@@ -24,6 +24,7 @@ public class GameAssets : MonoBehaviour
     {
         instance = this;
     }
+    public GameObject soundObject;
     public Sprite snakeHeadSprite;
     public Sprite snakeBodySprite;
     public Sprite foodSprite;
@@ -33,5 +34,9 @@ public class GameAssets : MonoBehaviour
     {
         public SoundManager.Sound sound;
         public AudioClip audioClip;
+    }
+    public GameObject GetSoundObject()
+    {
+        return soundObject;
     }
 }

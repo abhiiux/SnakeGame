@@ -1,16 +1,4 @@
-﻿/* 
-    ------------------- Code Monkey -------------------
-
-    Thank you for downloading this package
-    I hope you find it useful in your projects
-    If you have any questions let me know
-    Cheers!
-
-               unitycodemonkey.com
-    --------------------------------------------------
- */
-
-using CodeMonkey;
+﻿using CodeMonkey;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,14 +15,9 @@ public class GameHandler : MonoBehaviour {
     }
     private void Start() {
         Debug.Log("GameHandler.Start");
-        levelGrade = new LevelGrid(10, 10);
+        levelGrade = new LevelGrid(Camera.main);
         snake.Setup(levelGrade);
         levelGrade.Setup(snake);
-
-        for (int i = 0; i < 10000; i++)
-        {
-            Debug.Log("LoadingTest");
-        }
     }
     private void Update()
     {
