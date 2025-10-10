@@ -24,6 +24,7 @@ public class GameAssets : MonoBehaviour
     {
         instance = this;
     }
+    private float width, height;
     public GameObject soundObject;
     public Sprite snakeHeadSprite;
     public Sprite snakeBodySprite;
@@ -38,5 +39,18 @@ public class GameAssets : MonoBehaviour
     public GameObject GetSoundObject()
     {
         return soundObject;
+    }
+    public void SetScreenSize(float w, float h)
+    {
+        this.width = w;
+        this.height = h;
+    }
+    public float GetScreenWidth()
+    {
+        return width;
+    }
+    public float GetScreenHeight()
+    {
+        return height;
     }
 }

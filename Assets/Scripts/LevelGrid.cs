@@ -13,16 +13,22 @@ public class LevelGrid
     private Transform foodContainer;
     
     private Vector2 gridOffset;
+    private float cellSize; // NEW: Cell size variable
 
-    public LevelGrid(Camera mainCamera)
+    public LevelGrid(Camera mainCamera, float cellSize = 0.5f) // NEW: Accept cellSize parameter
     {
+        this.cellSize = cellSize;
+        
         Vector3 bottomLeft = mainCamera.ScreenToWorldPoint(new Vector3(0, 0, mainCamera.nearClipPlane));
         Vector3 topRight = mainCamera.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, mainCamera.nearClipPlane));
 
         gridOffset = new Vector2(bottomLeft.x, bottomLeft.y);
         
-        this.width = Mathf.Max(1, Mathf.FloorToInt(topRight.x - bottomLeft.x) + 1);
-        this.height = Mathf.Max(1, Mathf.FloorToInt(topRight.y - bottomLeft.y) + 1);
+        // Calculate grid dimensions based on cell size
+        this.width = Mathf.Max(1, Mathf.FloorToInt((topRight.x - bottomLeft.x) / cellSize)+ 1);
+        this.height = Mathf.Max(1, Mathf.FloorToInt((topRight.y - bottomLeft.y) / cellSize));
+        
+        Debug.Log($"LevelGrid: {width}x{height}, CellSize: {cellSize}, Offset: {gridOffset}");
         
         foodContainer = new GameObject("Food Container").transform;
     }
@@ -40,7 +46,7 @@ public class LevelGrid
         
         do
         {
-            foodGridPosition = new Vector2Int(Random.Range(0, width - 2), Random.Range(0, height - 2));
+            foodGridPosition = new Vector2Int(Random.Range(0, width), Random.Range(0, height));
             attempts++;
             
             if (attempts > maxAttempts)
@@ -50,18 +56,16 @@ public class LevelGrid
             }
         } while (snake.GetFullSnakeGridPositionList().IndexOf(foodGridPosition) != -1);
         
-        // Clean up old food if it exists
         if (foodGameObject != null)
         {
             Object.Destroy(foodGameObject);
         }
         
-        // Create new food
         foodGameObject = new GameObject("Food", typeof(SpriteRenderer));
         foodGameObject.transform.SetParent(foodContainer);
         foodGameObject.GetComponent<SpriteRenderer>().sprite = GameAssets.instance.foodSprite;
         
-        // FIXED: Convert grid position to world position using offset
+        // Convert grid position to world position using cell size
         Vector2 worldPosition = GridToWorldPosition(foodGridPosition);
         foodGameObject.transform.position = worldPosition;
         
@@ -88,7 +92,6 @@ public class LevelGrid
     
     public Vector2Int ValidateGridPosition(Vector2Int gridPosition)
     {
-        // Wrap around grid boundaries (Pac-Man style)
         if (gridPosition.x < 0)
         {
             gridPosition.x = width - 1;
@@ -108,27 +111,29 @@ public class LevelGrid
         return gridPosition;
     }
     
-    // NEW: Convert grid coordinates to world coordinates
+    // Convert grid coordinates to world coordinates with cell size
     public Vector2 GridToWorldPosition(Vector2Int gridPosition)
     {
-        return new Vector2(gridPosition.x + gridOffset.x, gridPosition.y + gridOffset.y);
-    }
-    
-    // NEW: Convert world coordinates to grid coordinates
-    public Vector2Int WorldToGridPosition(Vector2 worldPosition)
-    {
-        return new Vector2Int(
-            Mathf.FloorToInt(worldPosition.x - gridOffset.x),
-            Mathf.FloorToInt(worldPosition.y - gridOffset.y)
+        return new Vector2(
+            (gridPosition.x * cellSize) + gridOffset.x + (cellSize / 2f),
+            (gridPosition.y * cellSize) + gridOffset.y + (cellSize / 2f)
         );
     }
     
-    // Utility methods
+    // Convert world coordinates to grid coordinates with cell size
+    public Vector2Int WorldToGridPosition(Vector2 worldPosition)
+    {
+        return new Vector2Int(
+            Mathf.FloorToInt((worldPosition.x - gridOffset.x) / cellSize),
+            Mathf.FloorToInt((worldPosition.y - gridOffset.y) / cellSize)
+        );
+    }
+    
     public int GetWidth() => width;
     public int GetHeight() => height;
     public Vector2 GetGridOffset() => gridOffset;
+    public float GetCellSize() => cellSize; // NEW: Return cell size
     
-    // Cleanup method
     public void Cleanup()
     {
         if (foodGameObject != null)

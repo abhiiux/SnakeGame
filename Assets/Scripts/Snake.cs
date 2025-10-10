@@ -1,16 +1,4 @@
-﻿/* 
-    ------------------- Code Monkey -------------------
-
-    Thank you for downloading this package
-    I hope you find it useful in your projects
-    If you have any questions let me know
-    Cheers!
-
-               unitycodemonkey.com
-    --------------------------------------------------
- */
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -18,6 +6,7 @@ using UnityEngine.InputSystem;
 public class Snake : MonoBehaviour
 {
     [SerializeField] InputAction inputAction;
+    private float cellSize; // NEW: Store cell size
     
     private enum Direction
     {
@@ -47,6 +36,7 @@ public class Snake : MonoBehaviour
     public void Setup(LevelGrid levelGrid)
     {
         this.levelGrid = levelGrid;
+        this.cellSize = levelGrid.GetCellSize(); // NEW: Get cell size from LevelGrid
     }
     
     private void OnEnable()
@@ -79,7 +69,7 @@ public class Snake : MonoBehaviour
         switch (state)
         {
             case State.Alive:
-                HandleInput();
+                // HandleInput();
                 HandleGridMovement();
                 break;
             case State.Dead:
@@ -93,7 +83,6 @@ public class Snake : MonoBehaviour
 
         Vector2 input = context.ReadValue<Vector2>();
 
-        // Horizontal movement
         if (input.x > 0.5f && gridMoveDirection != Direction.Left)
         {
             gridMoveDirection = Direction.Right;
@@ -102,7 +91,6 @@ public class Snake : MonoBehaviour
         {
             gridMoveDirection = Direction.Left;
         }
-        // Vertical movement
         else if (input.y > 0.5f && gridMoveDirection != Direction.Down)
         {
             gridMoveDirection = Direction.Up;
@@ -113,37 +101,37 @@ public class Snake : MonoBehaviour
         }
     }
 
-    private void HandleInput()
-    {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
-        {
-            if (gridMoveDirection != Direction.Down)
-            {
-                gridMoveDirection = Direction.Up;
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
-        {
-            if (gridMoveDirection != Direction.Up)
-            {
-                gridMoveDirection = Direction.Down;
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
-        {
-            if (gridMoveDirection != Direction.Right)
-            {
-                gridMoveDirection = Direction.Left;
-            }
-        }
-        if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            if (gridMoveDirection != Direction.Left)
-            {
-                gridMoveDirection = Direction.Right;
-            }
-        }
-    }
+    // private void HandleInput()
+    // {
+    //     if (Input.GetKeyDown(KeyCode.UpArrow))
+    //     {
+    //         if (gridMoveDirection != Direction.Down)
+    //         {
+    //             gridMoveDirection = Direction.Up;
+    //         }
+    //     }
+    //     if (Input.GetKeyDown(KeyCode.DownArrow))
+    //     {
+    //         if (gridMoveDirection != Direction.Up)
+    //         {
+    //             gridMoveDirection = Direction.Down;
+    //         }
+    //     }
+    //     if (Input.GetKeyDown(KeyCode.LeftArrow))
+    //     {
+    //         if (gridMoveDirection != Direction.Right)
+    //         {
+    //             gridMoveDirection = Direction.Left;
+    //         }
+    //     }
+    //     if (Input.GetKeyDown(KeyCode.RightArrow))
+    //     {
+    //         if (gridMoveDirection != Direction.Left)
+    //         {
+    //             gridMoveDirection = Direction.Right;
+    //         }
+    //     }
+    // }
 
     private void HandleGridMovement()
     {
@@ -178,7 +166,6 @@ public class Snake : MonoBehaviour
             bool snakeAteFood = levelGrid.TrySnakeEatFood(gridPosition);
             if (snakeAteFood)
             {
-                // Snake ate food, grow body
                 snakeBodySize++;
                 CreateSnakeBodyPart();
                 SoundManager.PlaySound(SoundManager.Sound.SnakeEat);
@@ -189,7 +176,8 @@ public class Snake : MonoBehaviour
                 snakeMovePositionList.RemoveAt(snakeMovePositionList.Count - 1);
             }
 
-            transform.position = new Vector3(gridPosition.x, gridPosition.y);
+            // NEW: Multiply by cellSize when setting position
+            transform.position = new Vector3(gridPosition.x * cellSize, gridPosition.y * cellSize);
             transform.eulerAngles = new Vector3(0, 0, GetAngleFromVector(gridMoveDirectionVector) - 90);
 
             UpdateSnakeBodyParts();
@@ -209,7 +197,7 @@ public class Snake : MonoBehaviour
 
     private void CreateSnakeBodyPart()
     {
-        snakeBodyPartList.Add(new SnakeBodyPart(snakeBodyPartList.Count));
+        snakeBodyPartList.Add(new SnakeBodyPart(snakeBodyPartList.Count, cellSize)); // NEW: Pass cellSize
     }
 
     private void UpdateSnakeBodyParts()
@@ -242,16 +230,16 @@ public class Snake : MonoBehaviour
         return gridPositionList;
     }
 
-    /*
-     * Handles a Single Snake Body Part
-     * */
     private class SnakeBodyPart
     {
         private SnakeMovePosition snakeMovePosition;
         private Transform transform;
+        private float cellSize; // NEW: Store cell size
 
-        public SnakeBodyPart(int bodyIndex)
+        public SnakeBodyPart(int bodyIndex, float cellSize) // NEW: Accept cellSize
         {
+            this.cellSize = cellSize;
+            
             GameObject snakeBodyGameObject = new GameObject("SnakeBody", typeof(SpriteRenderer));
             snakeBodyGameObject.GetComponent<SpriteRenderer>().sprite = GameAssets.instance.snakeBodySprite;
             snakeBodyGameObject.GetComponent<SpriteRenderer>().sortingOrder = -1 - bodyIndex;
@@ -262,7 +250,11 @@ public class Snake : MonoBehaviour
         {
             this.snakeMovePosition = snakeMovePosition;
 
-            transform.position = new Vector3(snakeMovePosition.GetGridPosition().x, snakeMovePosition.GetGridPosition().y);
+            // NEW: Multiply by cellSize when setting position
+            transform.position = new Vector3(
+                snakeMovePosition.GetGridPosition().x * cellSize, 
+                snakeMovePosition.GetGridPosition().y * cellSize
+            );
 
             float angle;
             switch (snakeMovePosition.GetDirection())
@@ -276,11 +268,9 @@ public class Snake : MonoBehaviour
                             break;
                         case Direction.Left:
                             angle = 0 + 45;
-                            // Removed position offset - transform.position += new Vector3(.2f, .2f);
                             break;
                         case Direction.Right:
                             angle = 0 - 45;
-                            // Removed position offset - transform.position += new Vector3(-.2f, .2f);
                             break;
                     }
                     break;
@@ -292,11 +282,9 @@ public class Snake : MonoBehaviour
                             break;
                         case Direction.Left:
                             angle = 180 - 45;
-                            // Removed position offset - transform.position += new Vector3(.2f, -.2f);
                             break;
                         case Direction.Right:
                             angle = 180 + 45;
-                            // Removed position offset - transform.position += new Vector3(-.2f, -.2f);
                             break;
                     }
                     break;
@@ -308,11 +296,9 @@ public class Snake : MonoBehaviour
                             break;
                         case Direction.Down:
                             angle = 180 - 45;
-                            // Removed position offset - transform.position += new Vector3(-.2f, .2f);
                             break;
                         case Direction.Up:
                             angle = 45;
-                            // Removed position offset - transform.position += new Vector3(-.2f, -.2f);
                             break;
                     }
                     break;
@@ -324,11 +310,9 @@ public class Snake : MonoBehaviour
                             break;
                         case Direction.Down:
                             angle = 180 + 45;
-                            // Removed position offset - transform.position += new Vector3(.2f, .2f);
                             break;
                         case Direction.Up:
                             angle = -45;
-                            // Removed position offset - transform.position += new Vector3(.2f, -.2f);
                             break;
                     }
                     break;
@@ -343,9 +327,6 @@ public class Snake : MonoBehaviour
         }
     }
 
-    /*
-     * Handles one Move Position from the Snake
-     * */
     private class SnakeMovePosition
     {
         private SnakeMovePosition previousSnakeMovePosition;
