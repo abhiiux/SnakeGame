@@ -13,18 +13,12 @@ MonoBehaviour:
   m_Name: AssetData
   m_EditorClassIdentifier: Assembly-CSharp::AssetData
   itemData:
-  - _name: 
-    _image: {fileID: 0}
-    _price: 0
-  - _name: 
-    _image: {fileID: 0}
-    _price: 0
-  - _name: 
-    _image: {fileID: 0}
-    _price: 0
-  - _name: 
-    _image: {fileID: 0}
-    _price: 0
-  - _name: 
-    _image: {fileID: 0}
-    _price: 0
+  - _name: sword
+    _image: {fileID: 21300000, guid: 849302b4f1f5a4ef694b4ee34d631902, type: 3}
+    _price: 10
+  - _name: bag
+    _image: {fileID: 21300000, guid: 00d6affb9e8474fa5a43a0faf892a40c, type: 3}
+    _price: 20
+  - _name: bike
+    _image: {fileID: 21300000, guid: d4cd58bff64f6fe438ce2e02b0f5fa6e, type: 3}
+    _price: 30

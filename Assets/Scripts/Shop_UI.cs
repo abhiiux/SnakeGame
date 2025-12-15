@@ -1,23 +1,17 @@
-using System.Security.AccessControl;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class Shop_UI : MonoBehaviour
 {
     [SerializeField]
-    private Transform shopcardTemplate;
+    private AssetData shopData;
     [SerializeField]
-    private int numberofCard;
+    private GameObject prefabTemplate;
 
     void Awake()
     {
         CoinClass.Load();
-        
-        if(shopcardTemplate == null)
-        {
-            shopcardTemplate = transform.Find("Shop_Card").GetComponent<Transform>();
-        }
-        CreateShopCard(numberofCard);
+        CreateShopCard(shopData.itemData.Count);
     }
 
     private void CreateShopCard(int cardCount)
@@ -28,17 +22,20 @@ public class Shop_UI : MonoBehaviour
             CreateCard(value);
             value--;
         } 
-        while(value >= 1);
+        while(value < 0);
     }
     private void CreateCard(int cardNumber)
     {
-        Transform obj = Instantiate(shopcardTemplate,this.transform);
+        Transform obj = Instantiate(prefabTemplate,this.transform).transform;
 
-        Button btn = obj.Find("Buy_Button").GetComponent<Button>();
-        btn.onClick.AddListener(() =>
+        if(obj.TryGetComponent<AssetCardScript>(out AssetCardScript cardData))
         {
-            Logger($" hey button was pressed on card {cardNumber}");
-        });
+            string _name = shopData.itemData[cardNumber]._name;
+            int _price = shopData.itemData[cardNumber]._price;
+            Sprite _image = shopData.itemData[cardNumber]._image;
+
+            cardData.CardValues(_name,_price.ToString(),_image);
+        }
     }
 
 
