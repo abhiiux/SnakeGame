@@ -7,28 +7,56 @@ using CodeMonkey.Utils;
 public class LevelGrid
 {
     private Vector2Int foodGridPosition;
-    private int width, height;
+    private float width, height;
+    private int gridWidth, gridHeight;
     private GameObject foodGameObject;
     private Snake snake;
     private Transform foodContainer;
     
     private Vector2 gridOffset;
-    private float cellSize; // NEW: Cell size variable
+    private float cellSize;
+    private Camera mainCamera;
 
-    public LevelGrid(Camera mainCamera, float cellSize = 0.5f) // NEW: Accept cellSize parameter
+    public LevelGrid(Camera mainCamera, float cellSize = 2f)
     {
         this.cellSize = cellSize;
+        this.mainCamera = mainCamera;
         
-        Vector3 bottomLeft = mainCamera.ScreenToWorldPoint(new Vector3(0, 0, mainCamera.nearClipPlane));
-        Vector3 topRight = mainCamera.ScreenToWorldPoint(new Vector3(Screen.width, Screen.height, mainCamera.nearClipPlane));
-
-        gridOffset = new Vector2(bottomLeft.x, bottomLeft.y);
+        // Calculate the actual visible world space bounds
+        float cameraHeight = 2f * mainCamera.orthographicSize;
+        float cameraWidth = cameraHeight * mainCamera.aspect;
         
-        // Calculate grid dimensions based on cell size
-        this.width = Mathf.Max(1, Mathf.FloorToInt((topRight.x - bottomLeft.x) / cellSize)+ 1);
-        this.height = Mathf.Max(1, Mathf.FloorToInt((topRight.y - bottomLeft.y) / cellSize));
+        // Get camera position
+        Vector3 camPos = mainCamera.transform.position;
         
-        Debug.Log($"LevelGrid: {width}x{height}, CellSize: {cellSize}, Offset: {gridOffset}");
+        // Calculate world bounds
+        float leftEdge = camPos.x - (cameraWidth / 2f);
+        float rightEdge = camPos.x + (cameraWidth / 2f);
+        float bottomEdge = camPos.y - (cameraHeight / 2f);
+        float topEdge = camPos.y + (cameraHeight / 2f);
+        
+        gridOffset = new Vector2(leftEdge, bottomEdge);
+        
+        this.width = cameraWidth;
+        this.height = cameraHeight;
+        
+        // Calculate grid dimensions - how many cells fit in the screen
+        this.gridWidth = Mathf.FloorToInt(width / cellSize);
+        this.gridHeight = Mathf.FloorToInt(height / cellSize);
+        
+        // Ensure minimum grid size
+        this.gridWidth = Mathf.Max(2, gridWidth);
+        this.gridHeight = Mathf.Max(2, gridHeight);
+        
+        Logger($"=== LevelGrid Initialization ===");
+        Logger($"Camera Orthographic Size: {mainCamera.orthographicSize}");
+        Logger($"Camera Aspect: {mainCamera.aspect}");
+        Logger($"Camera Position: {camPos}");
+        Logger($"World Bounds: Left={leftEdge}, Right={rightEdge}, Bottom={bottomEdge}, Top={topEdge}");
+        Logger($"Screen World Size: {width}x{height} units");
+        Logger($"Grid: {gridWidth}x{gridHeight} cells");
+        Logger($"CellSize: {cellSize}");
+        Logger($"Grid Offset: {gridOffset}");
         
         foodContainer = new GameObject("Food Container").transform;
     }
@@ -41,17 +69,17 @@ public class LevelGrid
     
     private void SpawnFood()
     {
-        int maxAttempts = width * height;
+        int maxAttempts = gridWidth * gridHeight;
         int attempts = 0;
         
         do
         {
-            foodGridPosition = new Vector2Int(Random.Range(0, width), Random.Range(0, height));
+            foodGridPosition = new Vector2Int(Random.Range(0, gridWidth), Random.Range(0, gridHeight));
             attempts++;
             
             if (attempts > maxAttempts)
             {
-                Debug.LogError("Unable to spawn food - grid may be full!");
+                Debug.LogError($"Unable to spawn food! Grid: {gridWidth}x{gridHeight}, Snake Length: {snake.GetFullSnakeGridPositionList().Count}");
                 return;
             }
         } while (snake.GetFullSnakeGridPositionList().IndexOf(foodGridPosition) != -1);
@@ -65,11 +93,10 @@ public class LevelGrid
         foodGameObject.transform.SetParent(foodContainer);
         foodGameObject.GetComponent<SpriteRenderer>().sprite = GameAssets.instance.foodSprite;
         
-        // Convert grid position to world position using cell size
         Vector2 worldPosition = GridToWorldPosition(foodGridPosition);
-        foodGameObject.transform.position = worldPosition;
+        foodGameObject.transform.position = new Vector3(worldPosition.x, worldPosition.y, 0);
         
-        Debug.Log($"Food spawned at Grid: {foodGridPosition}, World: {worldPosition}");
+        Logger($"Food spawned at Grid: {foodGridPosition}, World: {worldPosition}");
     }
 
     public bool TrySnakeEatFood(Vector2Int snakeGridPosition)
@@ -79,7 +106,7 @@ public class LevelGrid
             Object.Destroy(foodGameObject);
             SpawnFood();
             
-            CMDebug.TextPopupMouse("Snake Ate Food");
+            // CMDebug.TextPopupMouse($"Snake Ate Food");
             GameHandler.AddScore();
             
             return true;
@@ -92,26 +119,29 @@ public class LevelGrid
     
     public Vector2Int ValidateGridPosition(Vector2Int gridPosition)
     {
+        // Wrap horizontally
         if (gridPosition.x < 0)
         {
-            gridPosition.x = width - 1;
+            gridPosition.x = gridWidth - 1;
         }
-        if (gridPosition.x >= width)
+        else if (gridPosition.x >= gridWidth)
         {
             gridPosition.x = 0;
         }
+        
+        // Wrap vertically
         if (gridPosition.y < 0)
         {
-            gridPosition.y = height - 1;
+            gridPosition.y = gridHeight - 1;
         }
-        if (gridPosition.y >= height)
+        else if (gridPosition.y >= gridHeight)
         {
             gridPosition.y = 0;
         }
+        
         return gridPosition;
     }
     
-    // Convert grid coordinates to world coordinates with cell size
     public Vector2 GridToWorldPosition(Vector2Int gridPosition)
     {
         return new Vector2(
@@ -120,7 +150,6 @@ public class LevelGrid
         );
     }
     
-    // Convert world coordinates to grid coordinates with cell size
     public Vector2Int WorldToGridPosition(Vector2 worldPosition)
     {
         return new Vector2Int(
@@ -129,10 +158,12 @@ public class LevelGrid
         );
     }
     
-    public int GetWidth() => width;
-    public int GetHeight() => height;
+    public int GetWidth() => gridWidth;
+    public int GetHeight() => gridHeight;
+    public float GetScreenWidth() => width;
+    public float GetScreenHeight() => height;
     public Vector2 GetGridOffset() => gridOffset;
-    public float GetCellSize() => cellSize; // NEW: Return cell size
+    public float GetCellSize() => cellSize;
     
     public void Cleanup()
     {
@@ -144,5 +175,12 @@ public class LevelGrid
         {
             Object.Destroy(foodContainer.gameObject);
         }
+    }
+
+    private void Logger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.Log($"{message}");
+#endif
     }
 }

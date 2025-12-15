@@ -1,15 +1,19 @@
 ﻿using CodeMonkey;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class GameHandler : MonoBehaviour 
 {
     private static GameHandler instance;
     private static int score;
     public float width, height;
+    public static event Action<int> OnScoreAdded;
     [SerializeField] private Snake snake;
+    [SerializeField] private Button myButton;
     [SerializeField] private float cellSize = 0.5f; 
     private LevelGrid levelGrade;
     
@@ -21,29 +25,32 @@ public class GameHandler : MonoBehaviour
     
     private void Start() 
     {
-        Debug.Log("GameHandler.Start");
-        width = GameAssets.instance.GetScreenWidth();
-        height = GameAssets.instance.GetScreenHeight();
+        Logger("GameHandler.Start");
+        myButton.onClick.AddListener(OnButtonClick);
+        // width = GameAssets.instance.GetScreenWidth();
+        // height = GameAssets.instance.GetScreenHeight();
         // Pass cellSize to LevelGrid
         // levelGrade = new LevelGrid(width,height,cellSize);
         levelGrade = new LevelGrid(Camera.main,cellSize);
         snake.Setup(levelGrade);
         levelGrade.Setup(snake);
     }
-    
-    private void Update()
+    private void OnDestroy()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        CoinClass.Save();
+    }
+    private void OnButtonClick()
+    {
+
+        if (isGamePaused())
         {
-            if (isGamePaused())
-            {
-                ResumeGame();
-            }
-            else
-            {
-                PauseGame();
-            }
+            ResumeGame();
         }
+        else
+        {
+            PauseGame();
+        }
+    
     }
     
     public static int GetScore()
@@ -53,7 +60,8 @@ public class GameHandler : MonoBehaviour
 
     public static void AddScore()
     {
-        score += 100;
+        score += 10;
+        OnScoreAdded?.Invoke(score);
     }
 
     private static void InitializeStatic()
@@ -82,5 +90,10 @@ public class GameHandler : MonoBehaviour
     {
         return Time.timeScale == 0f;
     }
-
+    private void Logger(string message)
+    {
+#if UNITY_EDITOR
+        Debug.Log($"{message}");
+#endif
+    }
 }

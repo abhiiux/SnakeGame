@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
+
 public class Snake : MonoBehaviour
 {
     [SerializeField] InputAction inputAction;
-    private float cellSize; // NEW: Store cell size
+    private float cellSize;
     
     private enum Direction
     {
@@ -36,7 +37,20 @@ public class Snake : MonoBehaviour
     public void Setup(LevelGrid levelGrid)
     {
         this.levelGrid = levelGrid;
-        this.cellSize = levelGrid.GetCellSize(); // NEW: Get cell size from LevelGrid
+        this.cellSize = levelGrid.GetCellSize();
+        
+        // FIXED: Start snake in the center of the actual grid
+        int centerX = levelGrid.GetWidth() / 2;
+        int centerY = levelGrid.GetHeight() / 2;
+        gridPosition = new Vector2Int(centerX, centerY);
+        
+        Debug.Log($"Snake starting at grid position: {gridPosition} (Grid size: {levelGrid.GetWidth()}x{levelGrid.GetHeight()})");
+        
+        // Set initial world position
+        Vector2 worldPos = levelGrid.GridToWorldPosition(gridPosition);
+        transform.position = new Vector3(worldPos.x, worldPos.y, 0);
+        
+        Debug.Log($"Snake world position: {transform.position}");
     }
     
     private void OnEnable()
@@ -52,7 +66,7 @@ public class Snake : MonoBehaviour
     
     private void Awake()
     {
-        gridPosition = new Vector2Int(5, 5);
+        // Remove hardcoded position - will be set in Setup()
         gridMoveTimerMax = .2f;
         gridMoveTimer = gridMoveTimerMax;
         gridMoveDirection = Direction.Right;
@@ -69,7 +83,6 @@ public class Snake : MonoBehaviour
         switch (state)
         {
             case State.Alive:
-                // HandleInput();
                 HandleGridMovement();
                 break;
             case State.Dead:
@@ -82,6 +95,7 @@ public class Snake : MonoBehaviour
         if (!context.started) return;
 
         Vector2 input = context.ReadValue<Vector2>();
+        Debug.Log($" input is receiving {input}");
 
         if (input.x > 0.5f && gridMoveDirection != Direction.Left)
         {
@@ -100,38 +114,6 @@ public class Snake : MonoBehaviour
             gridMoveDirection = Direction.Down;
         }
     }
-
-    // private void HandleInput()
-    // {
-    //     if (Input.GetKeyDown(KeyCode.UpArrow))
-    //     {
-    //         if (gridMoveDirection != Direction.Down)
-    //         {
-    //             gridMoveDirection = Direction.Up;
-    //         }
-    //     }
-    //     if (Input.GetKeyDown(KeyCode.DownArrow))
-    //     {
-    //         if (gridMoveDirection != Direction.Up)
-    //         {
-    //             gridMoveDirection = Direction.Down;
-    //         }
-    //     }
-    //     if (Input.GetKeyDown(KeyCode.LeftArrow))
-    //     {
-    //         if (gridMoveDirection != Direction.Right)
-    //         {
-    //             gridMoveDirection = Direction.Left;
-    //         }
-    //     }
-    //     if (Input.GetKeyDown(KeyCode.RightArrow))
-    //     {
-    //         if (gridMoveDirection != Direction.Left)
-    //         {
-    //             gridMoveDirection = Direction.Right;
-    //         }
-    //     }
-    // }
 
     private void HandleGridMovement()
     {
@@ -176,8 +158,9 @@ public class Snake : MonoBehaviour
                 snakeMovePositionList.RemoveAt(snakeMovePositionList.Count - 1);
             }
 
-            // NEW: Multiply by cellSize when setting position
-            transform.position = new Vector3(gridPosition.x * cellSize, gridPosition.y * cellSize);
+            // FIXED: Use GridToWorldPosition for proper positioning
+            Vector2 worldPos = levelGrid.GridToWorldPosition(gridPosition);
+            transform.position = new Vector3(worldPos.x, worldPos.y, 0);
             transform.eulerAngles = new Vector3(0, 0, GetAngleFromVector(gridMoveDirectionVector) - 90);
 
             UpdateSnakeBodyParts();
@@ -197,7 +180,7 @@ public class Snake : MonoBehaviour
 
     private void CreateSnakeBodyPart()
     {
-        snakeBodyPartList.Add(new SnakeBodyPart(snakeBodyPartList.Count, cellSize)); // NEW: Pass cellSize
+        snakeBodyPartList.Add(new SnakeBodyPart(snakeBodyPartList.Count, levelGrid));
     }
 
     private void UpdateSnakeBodyParts()
@@ -234,11 +217,11 @@ public class Snake : MonoBehaviour
     {
         private SnakeMovePosition snakeMovePosition;
         private Transform transform;
-        private float cellSize; // NEW: Store cell size
+        private LevelGrid levelGrid;
 
-        public SnakeBodyPart(int bodyIndex, float cellSize) // NEW: Accept cellSize
+        public SnakeBodyPart(int bodyIndex, LevelGrid levelGrid)
         {
-            this.cellSize = cellSize;
+            this.levelGrid = levelGrid;
             
             GameObject snakeBodyGameObject = new GameObject("SnakeBody", typeof(SpriteRenderer));
             snakeBodyGameObject.GetComponent<SpriteRenderer>().sprite = GameAssets.instance.snakeBodySprite;
@@ -250,11 +233,9 @@ public class Snake : MonoBehaviour
         {
             this.snakeMovePosition = snakeMovePosition;
 
-            // NEW: Multiply by cellSize when setting position
-            transform.position = new Vector3(
-                snakeMovePosition.GetGridPosition().x * cellSize, 
-                snakeMovePosition.GetGridPosition().y * cellSize
-            );
+            // FIXED: Use GridToWorldPosition for proper positioning
+            Vector2 worldPos = levelGrid.GridToWorldPosition(snakeMovePosition.GetGridPosition());
+            transform.position = new Vector3(worldPos.x, worldPos.y, 0);
 
             float angle;
             switch (snakeMovePosition.GetDirection())

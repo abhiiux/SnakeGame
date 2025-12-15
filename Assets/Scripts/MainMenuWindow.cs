@@ -2,8 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using CodeMonkey.Utils;
+using TMPro;
+
 public class MainMenuWindow : MonoBehaviour
 {
+    [SerializeField]
+    private TMP_Text shoppableCoin;
     private enum Sub
     {
         Main,
@@ -11,15 +15,18 @@ public class MainMenuWindow : MonoBehaviour
     }
     private void Awake()
     {
-        transform.Find("howToPlaySub").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-        transform.Find("mainSub").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        // transform.Find("howToPlaySub").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        // transform.Find("mainSub").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
         transform.Find("mainSub").Find("playBtn").GetComponent<Button_UI>().ClickFunc = () => Loader.Load(Loader.Scene.GameScene);
         transform.Find("mainSub").Find("quitBtn").GetComponent<Button_UI>().ClickFunc = () => Application.Quit();
         transform.Find("mainSub").Find("howToPlayBtn").GetComponent<Button_UI>().ClickFunc = () => ShowSub(Sub.HowToPlay);
         transform.Find("howToPlaySub").Find("back").GetComponent<Button_UI>().ClickFunc = () => ShowSub(Sub.Main);
         ShowSub(Sub.Main);
     }
-
+    private void Start()
+    {
+        UpdateCoins();
+    }
     private void ShowSub(Sub sub)
     {
         transform.Find("mainSub").gameObject.SetActive(false);
@@ -33,5 +40,10 @@ public class MainMenuWindow : MonoBehaviour
                 transform.Find("howToPlaySub").gameObject.SetActive(true);
                 break;
         }
+    }
+
+    public void UpdateCoins()
+    {
+        shoppableCoin.text = CoinClass.ShoppableCoins.ToString();
     }
 }

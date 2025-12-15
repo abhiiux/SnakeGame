@@ -1,0 +1,5 @@
+# ninja log v5
+170	344	1760331571688890652	/Users/abhidevramesh/Documents/Mcet/Snake_Game/SnakeGame/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/732az3m6/obj/arm64-v8a/libswappywrapper.so	c201520ddec45b3c
+0	169	1760331571535202101	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	c00530fe91136dc
+3	19736	1765778466378959136	FramePacing/CMakeFiles/swappywrapper.dir/UnitySwappyWrapper.cpp.o	c00530fe91136dc
+19737	31285	1765778477909462078	/Users/abhidevramesh/Documents/Mcet/Snake_Game/SnakeGame/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/build/intermediates/cxx/RelWithDebInfo/732az3m6/obj/arm64-v8a/libswappywrapper.so	c201520ddec45b3c
